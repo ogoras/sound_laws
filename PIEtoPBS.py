@@ -59,13 +59,14 @@ class Word:
             case "PIE":
                 self.symbols = symbols = extractPIEsymbols(text)
                 self.syllabic = [s.syllabic for s in symbols]
-                # include *ey, *oy, etc. as syllabic
-                for i in range(1, len(symbols) - 1):
-                    if symbols[i].phoneme.vowel and not symbols[i+1].phoneme.vowel and symbols[i+1].phoneme.MoA in SONORANT:
-                        self.syllabic[i+1] = True
-                        self.symbols[i+1].syllabic = True
-                # all interconsonantal laryngeals are syllabic (but it's not usually written so we have to check for it)
+                # include sonorants *ey, *oy, *em, *om etc. as syllabic / _C or _#
                 for i in range(1, len(symbols)):
+                    if symbols[i-1].phoneme.vowel and not symbols[i].phoneme.vowel and symbols[i].phoneme.MoA in SONORANT:
+                        if i == len(symbols) - 1 or not self.syllabic[i+1]:
+                            self.syllabic[i] = True
+                            symbols[i].syllabic = True
+                # all interconsonantal laryngeals are syllabic (but it's not usually written so we have to check for it)
+                for i in range(len(symbols)):
                     if not symbols[i].phoneme.vowel and symbols[i].phoneme.PoA == LARYNGEAL:
                         surrounded = False
                         if i > 1:
@@ -82,6 +83,9 @@ class Word:
             case "PBS":
                 # to be implemented
                 pass
+
+    def __repr__(self):
+        return self.text
 
 # class Syllable:
 #     def __init__(self, onset, nucleus, coda):
@@ -218,15 +222,15 @@ if __name__ == "__main__":
     print("Phonemes:", [s.phoneme for s in word.symbols])
     print("Syllabic:", [1 if s else 0 for s in word.syllabic])
 
-    print(0, text, "Original PIE")
+    print(0, word, "Original PIE")
 
-    # # apply the RUKI sound law
-    # # s > š / {r, w, K, y}_
-    # RUKI = ['r', 'w', 'k', 'g', 'gʰ', 'y']
-    # for i in range(len(phones) - 1):
-    #     if phones[i + 1] == 's' and phones[i] in RUKI:
-    #         phones[i+1] = 'š'
-    # word = ''.join(phones)
-    # print(1, word, "After RUKI sound law")
+    # apply the RUKI sound law
+    # s > š / {r, w, K, y}_
+    RUKI = ['r', 'w', 'k', 'g', 'gʰ', 'y']
+    for i in range(len(word.symbols) - 1):
+        if word.get_phoneme(i+1) == 's' and word.get_phoneme(i).devoice() in RUKI:
+            word.set_phoneme(i+1, 'š', "PBS")
+
+    print(1, word, "After RUKI sound law")
 
     # # H > ∅ / C_C in non-initial syllables
