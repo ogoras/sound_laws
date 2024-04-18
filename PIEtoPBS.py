@@ -2,28 +2,28 @@
 import sys
 
 syllable_symbol = 'n̥'[1]
-PIEsecondary_graphemes = ['ʰ', 'ʷ', '₁', '₂', '₃', syllable_symbol]
+PIEsecondary_symbols = ['ʰ', 'ʷ', '₁', '₂', '₃', syllable_symbol]
 
 PIEvowels = ['e', 'ē', 'o', 'ō']
 PIEvowel_lengths = [1, 2, 1, 2, 1, 1]
 PIEvowel_heights = [3, 3, 3, 3, 6, 6] # 0 = open, 3 = mid, 6 = close
-OPEN = 0
-MID = 3
-CLOSE = 6
+height = {
+    "open": 0,
+    "mid": 3,
+    "close": 6,
+    "" : 3 # default value
+}
 PIEvowel_backness = [0, 0, 2, 2, 0, 2] # 0 = front, 1 = central, 2 = back
-FRONT = 0
-CENTRAL = 1
-BACK = 2
+backness = {
+    "front": 0,
+    "central": 1,
+    "back": 2,
+    "" : 1 # default value
+}
 PIEvowels_accented = ['é', 'ḗ', 'ó', 'ṓ']
 
 PIEnasals = ['m', 'n']
 PIEnasals_PoA = [0, 1] # 0 - labial, 1 - coronal, 2 - palatal, 3 - velar, 4 - labiovelar, 5 - laryngeal
-LABIAL = 0
-CORONAL = 1
-PALATAL = 2
-VELAR = 3
-LABIOVELAR = 4
-LARYNGEAL = 5
 PIEvoiceless_stops = ['p', 't', 'ḱ', 'k', 'kʷ']
 PIEvoiced_stops = ['d', 'ǵ', 'g', 'gʷ']
 PIEaspirated_stops = ['bʰ', 'dʰ', 'ǵʰ', 'gʰ', 'gʷʰ']
@@ -40,17 +40,45 @@ PIEsemivowels_PoA = [2, 4]
 PIEconsonants = [PIEnasals, PIEvoiceless_stops, PIEvoiced_stops, PIEaspirated_stops, PIEfricatives, PIElaterals, PIEtrills, PIEsemivowels]
 PIEconsonants_PoA = [PIEnasals_PoA, PIEvoiceless_stops_PoA, PIEvoiced_stops_PoA, PIEaspirated_stops_PoA, PIEfricatives_PoA, PIElaterals_PoA, PIEtrills_PoA, PIEsemivowels_PoA]
 PIEconsonants_MoA = [0, 1, 1, 1, 2, 3, 4, 5] # 0 - nasal, 1 - stop, 2 - fricative, 3 - lateral, 4 - trill, 5 - semivowel
-NASAL = 0
-STOP = 1
-FRICATIVE = 2
-LATERAL = 3
-TRILL = 4
-SEMIVOWEL = 5
-SONORANT = [NASAL, LATERAL, TRILL, SEMIVOWEL]
+MoA = {
+    "nasal": 0,
+    "stop": 1,
+    "fricative": 2,
+    "lateral": 3,
+    "trill": 4,
+    "semivowel": 5,
+    "" : 2
+}
+PoA = {
+    "labial": 0,
+    "coronal": 1,
+    "palatal": 2,
+    "velar": 3,
+    "labiovelar": 4,
+    "laryngeal": 5,
+    "" : 1
+}
+SONORANT = ["nasal", "lateral", "trill", "semivowel"]
 PIEconsonants_phonation = [1, 0, 1, 2, 0, 0, 0, 0] # 0 - voiceless, 1 - voiced, 2 - aspirated voiced
-VOICELESS = 0
-VOICED = 1
-ASPIRATED_VOICED = 2
+
+class PhonemeInventory:
+    def __init__(self):
+        pass
+
+class GraphemeInventory:
+    def __init__(self, notation = "PIE"):
+        self.notation = notation
+        self.phonemes = PhonemeInventory() # creates empty phoneme inventory
+        self.dict = {}
+        self.inverse_dict = {}
+        # open file notation.graphemes with Unicode support
+        with open(notation + ".graphemes", "r", encoding = "utf-8") as f:
+            for line in f:
+                # skip empty lines and lines starting with a hash
+                if line.isspace() or line[0] == '#':
+                    continue
+                words = line.split()
+                print(words)
 
 class Word:
     def __init__(self, text, notation = "PIE"):
@@ -67,7 +95,7 @@ class Word:
                             self.make_syllabic(i)
                 # all interconsonantal laryngeals are syllabic (but it's not usually written so we have to check for it)
                 for i in range(len(graphemes)):
-                    if not graphemes[i].phoneme.vowel and graphemes[i].phoneme.PoA == LARYNGEAL:
+                    if not graphemes[i].phoneme.vowel and graphemes[i].phoneme.PoA == PoA["laryngeal"]:
                         surrounded = False
                         if i > 1:
                             if not self.syllabic[i-1]:
@@ -177,9 +205,9 @@ class Consonant(Phoneme):
                 pass
 
     def devoiced(self):
-        if self.phonation == VOICELESS:
+        if self.phonation == False:
             return self
-        devoiced = Consonant.from_qualities(self.MoA, self.PoA, VOICELESS, self.notation)
+        devoiced = Consonant.from_qualities(self.MoA, self.PoA, False, self.notation)
         if devoiced == None:
             return self
         else:
@@ -239,7 +267,7 @@ def extractPIEgraphemes(word):
     graphemes = []
     i = 0
     while i < len(word):
-        if word[i] in PIEsecondary_graphemes:
+        if word[i] in PIEsecondary_symbols:
             if len(graphemes) == 0:
                 print("Error: secondary grapheme at beginning of word")
                 sys.exit(1)
@@ -273,4 +301,4 @@ if __name__ == "__main__":
 
     print(1, word, "After RUKI sound law")
 
-    # # H > ∅ / C_C in non-initial syllables
+    # H > ∅ / C_C in non-initial syllables
