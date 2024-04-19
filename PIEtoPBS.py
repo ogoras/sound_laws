@@ -4,42 +4,18 @@ import sys
 syllable_symbol = 'n̥'[1]
 PIEsecondary_symbols = ['ʰ', 'ʷ', '₁', '₂', '₃', syllable_symbol]
 
-PIEvowels = ['e', 'ē', 'o', 'ō']
-PIEvowel_lengths = [1, 2, 1, 2, 1, 1]
-PIEvowel_heights = [3, 3, 3, 3, 6, 6] # 0 = open, 3 = mid, 6 = close
-height = {
+HEIGHT = {
     "open": 0,
     "mid": 3,
     "close": 6,
     "" : 3 # default value
 }
-PIEvowel_backness = [0, 0, 2, 2, 0, 2] # 0 = front, 1 = central, 2 = back
-backness = {
+BACKNESS = {
     "front": 0,
     "central": 1,
     "back": 2,
     "" : 1 # default value
 }
-PIEvowels_accented = ['é', 'ḗ', 'ó', 'ṓ']
-
-PIEnasals = ['m', 'n']
-PIEnasals_PoA = [0, 1] # 0 - labial, 1 - coronal, 2 - palatal, 3 - velar, 4 - labiovelar, 5 - laryngeal
-PIEvoiceless_stops = ['p', 't', 'ḱ', 'k', 'kʷ']
-PIEvoiced_stops = ['d', 'ǵ', 'g', 'gʷ']
-PIEaspirated_stops = ['bʰ', 'dʰ', 'ǵʰ', 'gʰ', 'gʷʰ']
-PIEvoiceless_stops_PoA = PIEaspirated_stops_PoA = [0, 1, 2, 3, 4]
-PIEvoiced_stops_PoA = [1, 2, 3, 4]
-PIEfricatives = ['s', 'h₁', 'h₂', 'h₃']
-PIEfricatives_PoA = [1, 5, 5, 5]
-PIElaterals = ['l']
-PIElaterals_PoA = [1]
-PIEtrills = ['r']
-PIEtrills_PoA = [1]
-PIEsemivowels = ['y', 'w']
-PIEsemivowels_PoA = [2, 4]
-PIEconsonants = [PIEnasals, PIEvoiceless_stops, PIEvoiced_stops, PIEaspirated_stops, PIEfricatives, PIElaterals, PIEtrills, PIEsemivowels]
-PIEconsonants_PoA = [PIEnasals_PoA, PIEvoiceless_stops_PoA, PIEvoiced_stops_PoA, PIEaspirated_stops_PoA, PIEfricatives_PoA, PIElaterals_PoA, PIEtrills_PoA, PIEsemivowels_PoA]
-PIEconsonants_MoA = [0, 1, 1, 1, 2, 3, 4, 5] # 0 - nasal, 1 - stop, 2 - fricative, 3 - lateral, 4 - trill, 5 - semivowel
 MoA = {
     "nasal": 0,
     "stop": 1,
@@ -59,26 +35,206 @@ PoA = {
     "" : 1
 }
 SONORANT = ["nasal", "lateral", "trill", "semivowel"]
-PIEconsonants_phonation = [1, 0, 1, 2, 0, 0, 0, 0] # 0 - voiceless, 1 - voiced, 2 - aspirated voiced
 
 class PhonemeInventory:
-    def __init__(self):
-        pass
+    def __init__(self, notation = "PIE"):
+        self.notation = notation
+        self.vowels = VowelInventory(notation)
+        self.consonants = ConsonantInventory(notation)
+
+    def add_vowel(self, symbol, qualities):
+        return self.vowels.add(symbol, qualities)
+
+    def add_consonant(self, symbol, qualities):
+        return self.consonants.add(symbol, qualities)
+    
+    def is_vowel(self, symbol):
+        return symbol in self.vowels.dict
+
+class VowelInventory:
+    def __init__(self, notation = "PIE"):
+        self.notation = notation
+        self.dict = {}
+        self.inverse_dict = {}
+
+    def add(self, symbol, qualities):
+        backness = BACKNESS[""]
+        height = HEIGHT[""]
+        long = False
+        variant = 1
+        for quality in qualities:
+            if quality in BACKNESS:
+                backness = BACKNESS[quality]
+            elif quality in HEIGHT:
+                height = HEIGHT[quality]
+            elif quality == "long":
+                long = True
+            elif quality == "short":
+                long = False
+            elif quality.isnumeric():
+                variant = int(quality)
+            else:
+                print("Error: invalid vowel quality: " + quality)
+                sys.exit(1)
+        vowel = Vowel(backness, height, long, variant)
+        self.dict[symbol] = vowel
+        if not vowel in self.inverse_dict:
+            self.inverse_dict[vowel] = symbol
+        return self.inverse_dict[vowel]
+    
+class Vowel:
+    def __init__(self, backness, height, long, variant):
+        self.backness = backness
+        self.height = height
+        self.long = long
+        self.variant = variant
+
+    def __eq__(self, other):
+        return self.backness == other.backness and \
+            self.height == other.height and self.long == other.long and self.variant == other.variant
+
+    def __hash__(self):
+        return hash((self.backness, self.height, self.long, self.variant))
+
+class ConsonantInventory:
+    def __init__(self, notation = "PIE"):
+        self.notation = notation
+        self.dict = {}
+        self.inverse_dict = {}
+
+    def add(self, symbol, consonant):
+        voiced = True
+        aspirated = False
+        place = PoA[""]
+        manner = MoA[""]
+        variant = 1
+        for quality in consonant:
+            if quality == "voiceless" or quality == "voiced":
+                voiced = quality == "voiced"
+            elif quality == "aspirated" or quality == "unaspirated":
+                aspirated = quality == "aspirated"
+            elif quality in PoA:
+                place = PoA[quality]
+            elif quality in MoA:
+                manner = MoA[quality]
+            elif quality.isnumeric():
+                variant = int(quality)
+            else:
+                print("Error: invalid consonant quality: " + quality)
+                sys.exit(1)
+        consonant = Consonant(voiced, aspirated, place, manner, variant)
+        self.dict[symbol] = consonant
+        if not consonant in self.inverse_dict:
+            self.inverse_dict[consonant] = symbol
+        return self.inverse_dict[consonant]
+
+    def is_sonorant(self, symbol):
+        if not symbol in self.dict:
+            return False
+        return self.dict[symbol].manner in SONORANT
+
+    def check_PoA(self, symbol, place):
+        if not symbol in self.dict:
+            return False
+        return self.dict[symbol].place == PoA[place]
+    
+    def devoice(self, symbol):
+        if not symbol in self.dict:
+            return symbol
+        consonant = self.dict[symbol]
+        consonant.voiced = False
+        if consonant in self.inverse_dict:
+            return self.inverse_dict[consonant]
+        return symbol
+
+class Consonant:
+    def __init__(self, voiced, aspirated, place, manner, variant):
+        self.voiced = voiced
+        self.aspirated = aspirated
+        self.place = place
+        self.manner = manner
+        self.variant = variant
+
+    def __eq__(self, other):
+        return self.voiced == other.voiced and \
+            self.aspirated == other.aspirated and self.place == other.place and \
+            self.manner == other.manner and self.variant == other.variant
+
+    def __hash__(self):
+        return hash((self.voiced, self.aspirated, self.place, self.manner, self.variant))
 
 class GraphemeInventory:
     def __init__(self, notation = "PIE"):
         self.notation = notation
-        self.phonemes = PhonemeInventory() # creates empty phoneme inventory
+        self.phonemes = PhonemeInventory(notation) # creates empty phoneme inventory
         self.dict = {}
         self.inverse_dict = {}
+        self.special_symbols = []
         # open file notation.graphemes with Unicode support
         with open(notation + ".graphemes", "r", encoding = "utf-8") as f:
             for line in f:
-                # skip empty lines and lines starting with a hash
-                if line.isspace() or line[0] == '#':
+                if line[0] == '#':
                     continue
                 words = line.split()
-                print(words)
+                if len(words) == 0:
+                    continue
+                self.add(words[0], words[1:])
+                
+    def add(self, grapheme, qualities):
+        # setting the default values
+        consonant = True
+        accented = False
+        syllabic = False
+        phoneme_qualities = []
+        if "symbol" in qualities:
+            self.special_symbols.append(grapheme)
+            return
+        for quality in qualities:
+            if quality == "vowel":
+                consonant = False
+                syllabic = True
+            elif quality == "accented":
+                accented = True
+            elif quality == "syllabic":
+                syllabic = True
+            else:
+                phoneme_qualities.append(quality)
+        if consonant:
+            phoneme = self.phonemes.add_consonant(grapheme, phoneme_qualities)
+        else:
+            phoneme = self.phonemes.add_vowel(grapheme, phoneme_qualities)
+        grapheme_information = PhonemicGrapheme(phoneme, syllabic, accented)
+        self.dict[grapheme] = grapheme_information
+        self.inverse_dict[grapheme_information] = grapheme
+
+    def is_syllabic(self, grapheme):
+        return self.dict[grapheme].syllabic
+    
+    def get_phoneme(self, grapheme):
+        return self.dict[grapheme].phoneme
+    
+    def find(self, phoneme, syllabic, accented = False):
+        grapheme_information = PhonemicGrapheme(phoneme, syllabic, accented)
+        if not grapheme_information in self.inverse_dict:
+            print("Error: phoneme not found in inventory: " + phoneme)
+            sys.exit(1)
+        return self.inverse_dict[grapheme_information]
+    
+class PhonemicGrapheme:
+    def __init__(self, phoneme, syllabic, accented):
+        self.phoneme = phoneme
+        self.syllabic = syllabic
+        self.accented = accented
+
+    def __eq__(self, other):
+        return self.phoneme == other.phoneme and self.syllabic == other.syllabic and self.accented == other.accented
+    def __hash__(self):
+        return hash((self.phoneme, self.syllabic, self.accented))
+
+graphemeInventories = {
+    "PIE": GraphemeInventory("PIE"),
+    "PBS": GraphemeInventory("PBS")
+}
 
 class Word:
     def __init__(self, text, notation = "PIE"):
@@ -86,22 +242,29 @@ class Word:
         self.notation = notation
         match notation:
             case "PIE":
+                graphemeInventory = graphemeInventories[notation]
+                phonemeInventory = graphemeInventory.phonemes
+                consonantInventory = phonemeInventory.consonants
+                vowelInventory = phonemeInventory.vowels
                 self.graphemes = graphemes = extractPIEgraphemes(text)
-                self.syllabic = [s.syllabic for s in graphemes]
+                self.phonemes = phonemes = [graphemeInventory.get_phoneme(g) for g in graphemes]
+                length = len(graphemes)
+                self.syllabic = [graphemeInventory.is_syllabic(s) for s in graphemes]
                 # include sonorants *ey, *oy, *em, *om etc. as syllabic / _C or _#
-                for i in range(1, len(graphemes)):
-                    if graphemes[i-1].phoneme.vowel and not graphemes[i].phoneme.vowel and graphemes[i].phoneme.MoA in SONORANT:
-                        if i == len(graphemes) - 1 or not self.syllabic[i+1]:
+                for i in range(1, length):
+                    if phonemeInventory.is_vowel(phonemes[i-1]) and \
+                    consonantInventory.is_sonorant(phonemes[i]):
+                        if i == length - 1 or not self.syllabic[i+1]:
                             self.make_syllabic(i)
                 # all interconsonantal laryngeals are syllabic (but it's not usually written so we have to check for it)
-                for i in range(len(graphemes)):
-                    if not graphemes[i].phoneme.vowel and graphemes[i].phoneme.PoA == PoA["laryngeal"]:
+                for i in range(length):
+                    if consonantInventory.check_PoA(graphemes[i], "laryngeal"):
                         surrounded = False
                         if i > 1:
                             if not self.syllabic[i-1]:
                                 surrounded = True
                             else: continue
-                        if i < len(graphemes) - 1:
+                        if i < length - 1:
                             if not self.syllabic[i+1]:
                                 surrounded = True
                             else: continue
@@ -116,152 +279,16 @@ class Word:
     
     def make_syllabic(self, i):
         self.syllabic[i] = True
-        self.graphemes[i].syllabic = True
 
     def get_phoneme(self, i):
-        return self.graphemes[i].phoneme
+        return self.phonemes[i]
     
     def set_phoneme(self, i, symbol, notation):
+        self.phonemes[i] = symbol
         if self.notation != None and notation != self.notation:
             self.notation = None # no biggie
-        grapheme = Grapheme(symbol, notation)
-        self.graphemes[i] = grapheme
-        self.syllabic[i] = grapheme.syllabic
-
-# class Syllable:
-#     def __init__(self, onset, nucleus, coda):
-#         self.onset = onset
-#         self.nucleus = nucleus
-#         self.coda = coda
-
-# class Nucleus:
-#     def __init__(self, phonemes, accent = 0):
-#         self.phonemes = phonemes
-#         self.length = sum([phoneme.length() for phoneme in phonemes])
-#         self.accent = accent
-            
-class Phoneme:
-    def devoiced(self):
-        return self
-
-    def __repr__(self):
-        return self.symbol
-    
-    def __eq__(self, other):
-        return isinstance(other, Phoneme) and self.symbol == other.symbol
-
-def phoneme(grapheme, notation = "PIE"):
-    match notation:
-        case "PIE":
-            if grapheme in PIEvowels:
-                return Vowel(grapheme, notation)
-            else:
-                return Consonant(grapheme, notation)
-        case "PBS":
-            # to be implemented
-            pass
-
-class Vowel(Phoneme):
-    def __init__(self, symbol, notation):
-        self.vowel = True
-        self.symbol = symbol
-        self.notation = notation
-        self.phonation = 1 # assumption true for all IE languages
-        match notation:
-            case "PIE":
-                # find the index in the PIEvowels list
-                try:
-                    index = PIEvowels.index(symbol)
-                except ValueError:
-                    print("Error: invalid vowel grapheme: " + symbol + " (notation: " + notation + ")")
-                    sys.exit(1)
-                self.length = PIEvowel_lengths[index]
-                self.height = PIEvowel_heights[index]
-                self.backness = PIEvowel_backness[index]
-            case "PBS":
-                # to be implemented
-                pass
-
-class Consonant(Phoneme):
-    def __init__(self, symbol, notation):
-        self.vowel = False
-        self.symbol = symbol
-        self.notation = notation
-        match notation:
-            case "PIE":
-                for i in range(len(PIEconsonants)):
-                    try:
-                        index = PIEconsonants[i].index(symbol)
-                    except ValueError:
-                        continue
-                    self.MoA = PIEconsonants_MoA[i] # manner of articulation
-                    self.PoA = PIEconsonants_PoA[i][index] # place of articulation
-                    self.phonation = PIEconsonants_phonation[i]
-                    return
-                print("Error: invalid consonant symbol: " + symbol + " (notation: " + notation + ")")
-                sys.exit(1)
-            case "PBS":
-                # to be implemented
-                pass
-
-    def devoiced(self):
-        if self.phonation == False:
-            return self
-        devoiced = Consonant.from_qualities(self.MoA, self.PoA, False, self.notation)
-        if devoiced == None:
-            return self
-        else:
-            return devoiced
-        
-    def from_qualities(MoA, PoA, phonation, notation):
-        match notation:
-            case "PIE":
-                for i in range(len(PIEconsonants)):
-                    if PIEconsonants_MoA[i] != MoA or PIEconsonants_phonation[i] != phonation:
-                        continue
-                    for j in range(len(PIEconsonants[i])):
-                        if PIEconsonants_PoA[i][j] == PoA:
-                            return Consonant(PIEconsonants[i][j], notation)
-                return None
-            
-
-class Grapheme: # in this case represents phoneme & sometimes prosodic information
-    def __init__(self, symbol, notation = "PIE"):
-        self.grapheme = symbol
-        self.notation = notation
-        match notation:
-            case "PIE":
-                self.syllabic = False
-                symbol = symbol
-                index = -1
-                try:
-                    index = PIEvowels_accented.index(symbol)
-                except ValueError:
-                    pass
-                if index != -1:
-                    self.accented = True
-                    symbol = PIEvowels[index]
-                elif symbol[-1] == syllable_symbol:
-                    self.syllabic = True
-                    symbol = symbol[:-1]
-                elif symbol == 'i':
-                    self.syllabic = True
-                    symbol = 'y'
-                elif symbol == 'u':
-                    self.syllabic = True
-                    symbol = 'w'
-                self.phoneme = phoneme(symbol, notation)
-                if self.phoneme.vowel:
-                    self.syllabic = True
-            case "PBS":
-                # to be implemented
-                pass
-
-    def __str__(self):
-        return self.grapheme
-    
-    def __repr__(self):
-        return self.grapheme
+        self.graphemes[i] = graphemeInventories[notation].find(symbol, self.syllabic[i])
+        self.text = "".join(self.graphemes)
         
 def extractPIEgraphemes(word):
     graphemes = []
@@ -275,18 +302,18 @@ def extractPIEgraphemes(word):
         else:
             graphemes.append(word[i])
         i += 1
-    return [Grapheme(s, "PIE") for s in graphemes]
+    return graphemes
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Usage: python PIEtoPBS.py <word>")
+        print("Usage: " + sys.argv[0] + " <word>")
         sys.exit(1)
     text = sys.argv[1]
 
     # split the word into phones
     word = Word(text, "PIE")
     print("Graphemes:", word.graphemes)
-    print("Phonemes:", [s.phoneme for s in word.graphemes])
+    print("Phonemes:", word.phonemes)
     print("Syllabic:", [1 if s else 0 for s in word.syllabic])
 
     print(0, word, "Original PIE")
@@ -294,9 +321,9 @@ if __name__ == "__main__":
     # apply the RUKI sound law
     # s > š / {r, w, K, y}_
     RUKI = ['r', 'w', 'k', 'g', 'gʰ', 'y']
-    RUKI = [phoneme(symbol, "PIE") for symbol in RUKI]
+    consonantInventory = graphemeInventories["PIE"].phonemes.consonants
     for i in range(len(word.graphemes) - 1):
-        if word.get_phoneme(i+1) == phoneme('s', "PIE") and word.get_phoneme(i).devoiced() in RUKI:
+        if word.get_phoneme(i+1) == 's' and consonantInventory.devoice(word.get_phoneme(i)) in RUKI:
             word.set_phoneme(i+1, 'š', "PBS")
 
     print(1, word, "After RUKI sound law")

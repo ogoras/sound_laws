@@ -1,25 +1,3 @@
-e front vowel
-ē long front vowel
-o back vowel
-ō long back vowel
-é accented front vowel
-ḗ accented long front vowel
-ó accented back vowel
-ṓ accented long back vowel
-
-i syllabic palatal semivowel
-u syllabic labial semivowel
-m̥ syllabic labial nasal
-n̥ syllabic coronal nasal
-l̥ syllabic lateral
-r̥ syllabic trill
-í accented syllabic palatal semivowel
-ú accented syllabic labial semivowel
-ḿ̥ accented syllabic labial nasal
-ń̥ accented syllabic coronal nasal
-ĺ̥ accented syllabic lateral
-ŕ̥ accented syllabic trill
-
 m labial nasal
 n coronal nasal
 p voiceless labial stop
@@ -37,10 +15,32 @@ dʰ aspirated coronal stop
 gʰ aspirated velar stop
 gʷʰ aspirated labiovelar stop
 s fricative
-h₁ laryngeal
-h₂ laryngeal
-h₃ laryngeal
+h₁ laryngeal 1
+h₂ laryngeal 2
+h₃ laryngeal 3
 l lateral
 r trill
 y palatal semivowel
 w labial semivowel
+
+i syllabic palatal semivowel
+u syllabic labial semivowel
+m̥ syllabic labial nasal
+n̥ syllabic coronal nasal
+l̥ syllabic lateral
+r̥ syllabic trill
+í accented syllabic palatal semivowel
+ú accented syllabic labial semivowel
+ḿ̥ accented syllabic labial nasal
+ń̥ accented syllabic coronal nasal
+ĺ̥ accented syllabic lateral
+ŕ̥ accented syllabic trill
+
+e front vowel
+ē long front vowel
+o back vowel
+ō long back vowel
+é accented front vowel
+ḗ accented long front vowel
+ó accented back vowel
+ṓ accented long back vowel
