@@ -62,6 +62,13 @@ class Word:
             self.notation = None # no biggie
         self.graphemes[i] = graphemeInventories[notation].find(symbol, self.syllabic[i])
         self.text = "".join(self.graphemes)
+
+    def delete_phoneme(self, i):
+        del self.phonemes[i]
+        del self.graphemes[i]
+        del self.syllabic[i]
+        self.length -= 1
+        self.text = "".join(self.graphemes)
         
 def extractPIEgraphemes(word):
     graphemes = []
