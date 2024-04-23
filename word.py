@@ -86,7 +86,15 @@ class Word:
                 phonemeIndex -= 1
         return j
 
-    def add_acute(self, i):
+    def add_acute(self, i): # i points to the main vowel
+        PBSvowels = graphemeInventories["PBS"].phonemes.vowels
+        PIEvowels = graphemeInventories["PIE"].phonemes.vowels
+        phoneme = self.get_phoneme(i)
+        if phoneme in ['e', 'o']:
+            self.set_phoneme(i, PIEvowels.lengthen(phoneme), "PIE")
+        else:
+            j = self._grapheme_index(i)
+            self.set_phoneme(i, PBSvowels.lengthen(self.graphemes[j]), "PBS")
         # find the end of the nucleus
         while i < self.length and self.syllabic[i]:
             i += 1

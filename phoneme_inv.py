@@ -78,6 +78,15 @@ class VowelInventory:
             self.inverse_dict[vowel] = symbol
         return self.inverse_dict[vowel]
     
+    def lengthen(self, symbol):
+        if not symbol in self.dict:
+            return symbol
+        vowel = self.dict[symbol]
+        vowel.long = True
+        if vowel in self.inverse_dict:
+            return self.inverse_dict[vowel]
+        return symbol
+    
 class Vowel:
     def __init__(self, backness, height, long, variant):
         self.backness = backness
