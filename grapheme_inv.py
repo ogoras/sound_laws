@@ -58,6 +58,9 @@ class GraphemeInventory:
     def is_syllabic(self, grapheme):
         return self.dict[grapheme].syllabic
     
+    def is_accented(self, grapheme):
+        return self.dict[grapheme].accented
+    
     def get_phoneme(self, grapheme):
         return self.dict[grapheme].phoneme
     

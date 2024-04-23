@@ -24,6 +24,7 @@ class Word:
                 self.phonemes = phonemes = [graphemeInventory.get_phoneme(g) for g in graphemes]
                 self.length = length = len(phonemes)
                 self.syllabic = [graphemeInventory.is_syllabic(s) for s in graphemes]
+                self.accented = [graphemeInventory.is_accented(s) for s in graphemes]
                 # include sonorants *ey, *oy, *em, *om etc. as syllabic / _C or _#
                 for i in range(1, length):
                     if phonemeInventory.is_vowel(phonemes[i-1]) and \
@@ -62,7 +63,7 @@ class Word:
         if self.notation != None and notation != self.notation:
             self.notation = None # no biggie
         j = self._grapheme_index(i)
-        self.graphemes[j] = graphemeInventories[notation].find(symbol, self.syllabic[i])
+        self.graphemes[j] = graphemeInventories[notation].find(symbol, self.syllabic[i], self.accented[i])
         self._update_text()
 
     def delete_phoneme(self, i):
