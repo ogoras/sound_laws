@@ -40,3 +40,22 @@ if __name__ == "__main__":
             i += 1
 
     print(2, word, "Lost interconsonantal laryngeals in non-initial syllables")
+
+    # Winter's law
+    # for all syllabic nuclei containing short vowels, they gain the acute if followed by an unaspirated voiced stop
+    short_vowels = ['e', 'o', 'y', 'w']
+    voiced_stops = ['b', 'd', 'ǵ', 'g', 'gʷ']
+    i = 0
+    while i < word.length - 1:
+        if word.syllabic[i] and word.get_phoneme(i) in short_vowels:
+            if word.get_phoneme(i+1) in voiced_stops:
+                word.add_acute(i)
+            elif word.syllabic[i+1] and i < word.length - 2 and word.get_phoneme(i+2) in voiced_stops:
+                word.add_acute(i)
+            else:
+                # go to the end of the syllable nucleus
+                while i < word.length and word.syllabic[i]:
+                    i += 1
+        i += 1
+
+    print(3, word, "After Winter's law")

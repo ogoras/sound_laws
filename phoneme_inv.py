@@ -30,7 +30,7 @@ PoA = {
     "laryngeal": 5,
     "" : 1
 }
-SONORANT = ["nasal", "lateral", "trill", "semivowel"]
+SONORANT = [0, 3, 4, 5]
 
 class PhonemeInventory:
     def __init__(self, notation = "PIE"):

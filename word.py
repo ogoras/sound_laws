@@ -20,8 +20,9 @@ class Word:
                 consonantInventory = phonemeInventory.consonants
                 #vowelInventory = phonemeInventory.vowels
                 self.graphemes = graphemes = extractPIEgraphemes(text)
+                self.silent_graphemes = [False] * len(self.graphemes)
                 self.phonemes = phonemes = [graphemeInventory.get_phoneme(g) for g in graphemes]
-                self.length = length = len(graphemes)
+                self.length = length = len(phonemes)
                 self.syllabic = [graphemeInventory.is_syllabic(s) for s in graphemes]
                 # include sonorants *ey, *oy, *em, *om etc. as syllabic / _C or _#
                 for i in range(1, length):
@@ -31,7 +32,7 @@ class Word:
                             self.make_syllabic(i)
                 # all interconsonantal laryngeals are syllabic (but it's not usually written so we have to check for it)
                 for i in range(length):
-                    if consonantInventory.check_PoA(graphemes[i], "laryngeal"):
+                    if consonantInventory.check_PoA(phonemes[i], "laryngeal"):
                         surrounded = False
                         if i > 1:
                             if not self.syllabic[i-1]:
@@ -60,15 +61,42 @@ class Word:
         self.phonemes[i] = symbol
         if self.notation != None and notation != self.notation:
             self.notation = None # no biggie
-        self.graphemes[i] = graphemeInventories[notation].find(symbol, self.syllabic[i])
-        self.text = "".join(self.graphemes)
+        j = self._grapheme_index(i)
+        self.graphemes[j] = graphemeInventories[notation].find(symbol, self.syllabic[i])
+        self._update_text()
 
     def delete_phoneme(self, i):
+        # find the grapheme to delete using silent_graphemes
+        j = self._grapheme_index(i)
         del self.phonemes[i]
-        del self.graphemes[i]
         del self.syllabic[i]
+        del self.graphemes[j]
+        del self.silent_graphemes[j]
         self.length -= 1
+        self._update_text()
+
+    def _update_text(self):
         self.text = "".join(self.graphemes)
+
+    def _grapheme_index(self, phonemeIndex):
+        j = 0
+        while phonemeIndex > 0:
+            j += 1
+            if not self.silent_graphemes[j]:
+                phonemeIndex -= 1
+        return j
+
+    def add_acute(self, i):
+        # find the end of the nucleus
+        while i < self.length and self.syllabic[i]:
+            i += 1
+        # insert the acute at i and shift the rest of the word
+        self.add_special(i, graphemeInventories["PBS"].find_special("acute"))
+
+    def add_special(self, i, special_symbol):
+        self.graphemes.insert(i, special_symbol)
+        self.silent_graphemes.insert(i, True)
+        self._update_text()
         
 def extractPIEgraphemes(word):
     graphemes = []

@@ -7,7 +7,8 @@ class GraphemeInventory:
         self.phonemes = PhonemeInventory(notation) # creates empty phoneme inventory
         self.dict = {}
         self.inverse_dict = {}
-        self.special_symbols = []
+        self.special_symbols = {}
+        self.inverse_special = {}
         # open file notation.graphemes with Unicode support
         with open(notation + ".graphemes", "r", encoding = "utf-8") as f:
             for line in f:
@@ -25,7 +26,16 @@ class GraphemeInventory:
         syllabic = False
         phoneme_qualities = []
         if "symbol" in qualities:
-            self.special_symbols.append(grapheme)
+            # find index of "symbol" in qualities
+            index = qualities.index("symbol")
+            # and delete
+            del qualities[index]
+            if len(qualities) != 1:
+                print("Error: symbol must have exactly one quality")
+                sys.exit(1)
+            quality = qualities[0]
+            self.special_symbols[grapheme] = quality
+            self.inverse_special[quality] = grapheme
             return
         for quality in qualities:
             if quality == "vowel":
@@ -58,6 +68,12 @@ class GraphemeInventory:
             sys.exit(1)
         return self.inverse_dict[grapheme_information]
     
+    def find_special(self, quality):
+        if not quality in self.inverse_special:
+            print("Error: quality not found in inventory: " + quality)
+            print(self.special_symbols, self.inverse_special)
+            sys.exit(1)
+        return self.inverse_special[quality]
 
 class PhonemicGrapheme:
     def __init__(self, phoneme, syllabic, accented):
